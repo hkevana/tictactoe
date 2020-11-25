@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html>
+    
+    <head>
+        <title>Tic Tac Toe</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <link rel="stylesheet" type="text/css" href="./style.css" />
+        <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Bubblegum+Sans" />
+        <link rel="icon" href="./images/hashtag.png" type="image/png" />
+    </head>
+    <body>
+        <div id="app">
+            <div id="header">
+                <h1>Ultimate Tic Tac Toe</h1>
+            </div>
+            <div id="aside">
+                <div id="playerInfo">
+                    <div id="expandedLists">
+                        <ul id="playerNames">
+                            <li>{{ playerX }}</li>
+                            <li>{{ playerO }}</li>
+                        </ul>
+                        <ul id="colors" >
+                            <li v-bind:id="colorX" class="notHover" style="border-color: black">X</li>
+                            <li v-bind:id="colorO" class="notHover" style="border-color: black">O</li>
+                        </ul>
+                        <ul id="playerNames">
+                            <li>wins</li>
+                            <li>wins</li>
+                        </ul>
+                        <ul id="colors">
+                            <li v-bind:id="colorX" class="notHover" style="border-color: black">{{ winsX }}</li>
+                            <li v-bind:id="colorO" class="notHover" style="border-color: black">{{ winsO }}</li>
+                        </ul>
+                    </div>
+                    <div id="collapsedLists">
+                        <ul id="playerNames">
+                            <li v-if="!playerX">Player X</li>
+                            <li>{{ playerX }}</li>
+                        </ul>
+                        <ul id="colors">
+                            <li v-bind:id="colorX" class="notHover" style="border-color: black">X</li>
+                            <li v-bind:id="colorX" class="notHover" style="border-color: black">{{ winsX }}</li>
+                        </ul>
+                        <ul id="playerNames">
+                            <li v-if="!playerO">Player O</li>
+                            <li>{{ playerO }}</li>
+                        </ul>
+                        <ul id="colors">
+                            <li v-bind:id="colorO" class="notHover" style="border-color: black">O</li>
+                            <li v-bind:id="colorO" class="notHover" style="border-color: black">{{ winsO }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="buttons">
+                    <button @click="change('color')">Change Colors</button><br>
+                    <button @click="toggleNameForms()">Change Names</button><br>
+                    <button @click="change('board')">Clear Board</button><br>
+                    <button @click="clearScore()">Clear Score</button><br>
+                    <button @click="toggleRules()">Toggle Rules</button><br>
+                </div>
+                <div id="messages">
+                    <hr>
+                    <h2 id="error">{{ error }}</h2>
+                    <div id="alert" v-if="alertMsg">
+                        <h2 id="alert">{{ alertMsg }}</h2>
+                        <button @click="confirm()">{{ btnConfirm }}</button>
+                        <button @click="reject()">{{ btnReject }}</button>
+                    </div>
+                    <h2 id="win" v-bind:class="toggle ? colorX : colorO" v-if="winner != null">{{ winner }} wins!!</h2>
+                    <button v-if="winner != null" @click="change('again')">Play Again?</button>
+                </div>
+                <div id="nameForms" v-if="displayNameForms">
+                    <form @submit.prevent="toggleNameForms()">
+                        <input type="text" placeholder="Player X" v-model="playerX" />
+                        <input type="text" placeholder="Player O" v-model="playerO" />
+                        <button type="submit">Done</button>
+                    </form>
+                </div>
+                <div id="rules" v-if="displayRules">
+                    <h2>Definitions:</h2>
+                    <ul>
+                        <li>Local Boards (LB) = small 3x3 boards</li>
+                        <li>Global Board (GB) = large 3x3 grid</li>
+                        <li>Focus Ring = colored ring indicates next turn</li>
+                    </ul>
+                    <h2>Goal:</h2>
+                    <ul>
+                        <li>Win Global Board</li>
+                    </ul>
+                    <h2>Rules:</h2>
+                    <ul>
+                        <li>X plays first anywhere</li>
+                        <li>Every move in LB sends opponent to LB in respective GB grid</li>
+                        <li>Opponent must play inside of focus ring</li>
+                        <li>Focus ring color indicates player turn</li>
+                        <li>Win LB to mark on GB</li>
+                        <li>Win GB to win the game</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="content">
+                <div v-if="colorO">
+                    <table id="canvas">
+                        <tr id="top_row">
+                            <td id='tl_out'>
+                                <div id="tl_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="tl_tl" class="tl_in" @click="mark('tl_tl')"></td>
+                                            <td id="tl_tc" class="tc_in" @click="mark('tl_tc')"></td>
+                                            <td id="tl_tr" class="tr_in" @click="mark('tl_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tl_ml" class="ml_in" @click="mark('tl_ml')"></td>
+                                            <td id="tl_mc" class="mc_in" @click="mark('tl_mc')"></td>
+                                            <td id="tl_mr" class="mr_in" @click="mark('tl_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tl_bl" class="bl_in" @click="mark('tl_bl')"></td>
+                                            <td id="tl_bc" class="bc_in" @click="mark('tl_bc')"></td>
+                                            <td id="tl_br" class="br_in" @click="mark('tl_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='tc_out'>
+                                <div id="tc_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="tc_tl" class="tl_in" @click="mark('tc_tl')"></td>
+                                            <td id="tc_tc" class="tc_in" @click="mark('tc_tc')"></td>
+                                            <td id="tc_tr" class="tr_in" @click="mark('tc_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tc_ml" class="ml_in" @click="mark('tc_ml')"></td>
+                                            <td id="tc_mc" class="mc_in" @click="mark('tc_mc')"></td>
+                                            <td id="tc_mr" class="mr_in" @click="mark('tc_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tc_bl" class="bl_in" @click="mark('tc_bl')"></td>
+                                            <td id="tc_bc" class="bc_in" @click="mark('tc_bc')"></td>
+                                            <td id="tc_br" class="br_in" @click="mark('tc_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='tr_out'>
+                                <div id="tr_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="tr_tl" class="tl_in" @click="mark('tr_tl')"></td>
+                                            <td id="tr_tc" class="tc_in" @click="mark('tr_tc')"></td>
+                                            <td id="tr_tr" class="tr_in" @click="mark('tr_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tr_ml" class="ml_in" @click="mark('tr_ml')"></td>
+                                            <td id="tr_mc" class="mc_in" @click="mark('tr_mc')"></td>
+                                            <td id="tr_mr" class="mr_in" @click="mark('tr_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="tr_bl" class="bl_in" @click="mark('tr_bl')"></td>
+                                            <td id="tr_bc" class="bc_in" @click="mark('tr_bc')"></td>
+                                            <td id="tr_br" class="br_in" @click="mark('tr_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr id= "middle_row">
+                            <td id='ml_out'>
+                                <div id="ml_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="ml_tl" class="tl_in" @click="mark('ml_tl')"></td>
+                                            <td id="ml_tc" class="tc_in" @click="mark('ml_tc')"></td>
+                                            <td id="ml_tr" class="tr_in" @click="mark('ml_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="ml_ml" class="ml_in" @click="mark('ml_ml')"></td>
+                                            <td id="ml_mc" class="mc_in" @click="mark('ml_mc')"></td>
+                                            <td id="ml_mr" class="mr_in" @click="mark('ml_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="ml_bl" class="bl_in" @click="mark('ml_bl')"></td>
+                                            <td id="ml_bc" class="bc_in" @click="mark('ml_bc')"></td>
+                                            <td id="ml_br" class="br_in" @click="mark('ml_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='mc_out'>
+                                <div id="mc_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="mc_tl" class="tl_in" @click="mark('mc_tl')"></td>
+                                            <td id="mc_tc" class="tc_in" @click="mark('mc_tc')"></td>
+                                            <td id="mc_tr" class="tr_in" @click="mark('mc_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="mc_ml" class="ml_in" @click="mark('mc_ml')"></td>
+                                            <td id="mc_mc" class="mc_in" @click="mark('mc_mc')"></td>
+                                            <td id="mc_mr" class="mr_in" @click="mark('mc_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="mc_bl" class="bl_in" @click="mark('mc_bl')"></td>
+                                            <td id="mc_bc" class="bc_in" @click="mark('mc_bc')"></td>
+                                            <td id="mc_br" class="br_in" @click="mark('mc_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='mr_out'>
+                                <div id="mr_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="mr_tl" class="tl_in" @click="mark('mr_tl')"></td>
+                                            <td id="mr_tc" class="tc_in" @click="mark('mr_tc')"></td>
+                                            <td id="mr_tr" class="tr_in" @click="mark('mr_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="mr_ml" class="ml_in" @click="mark('mr_ml')"></td>
+                                            <td id="mr_mc" class="mc_in" @click="mark('mr_mc')"></td>
+                                            <td id="mr_mr" class="mr_in" @click="mark('mr_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="mr_bl" class="bl_in" @click="mark('mr_bl')"></td>
+                                            <td id="mr_bc" class="bc_in" @click="mark('mr_bc')"></td>
+                                            <td id="mr_br" class="br_in" @click="mark('mr_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr id="bottom_row">
+                            <td id='bl_out'>
+                                <div id="bl_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="bl_tl" class="tl_in" @click="mark('bl_tl')"></td>
+                                            <td id="bl_tc" class="tc_in" @click="mark('bl_tc')"></td>
+                                            <td id="bl_tr" class="tr_in" @click="mark('bl_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="bl_ml" class="ml_in" @click="mark('bl_ml')"></td>
+                                            <td id="bl_mc" class="mc_in" @click="mark('bl_mc')"></td>
+                                            <td id="bl_mr" class="mr_in" @click="mark('bl_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="bl_bl" class="bl_in" @click="mark('bl_bl')"></td>
+                                            <td id="bl_bc" class="bc_in" @click="mark('bl_bc')"></td>
+                                            <td id="bl_br" class="br_in" @click="mark('bl_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='bc_out'>
+                                <div id="bc_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="bc_tl" class="tl_in" @click="mark('bc_tl')"></td>
+                                            <td id="bc_tc" class="tc_in" @click="mark('bc_tc')"></td>
+                                            <td id="bc_tr" class="tr_in" @click="mark('bc_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="bc_ml" class="ml_in" @click="mark('bc_ml')"></td>
+                                            <td id="bc_mc" class="mc_in" @click="mark('bc_mc')"></td>
+                                            <td id="bc_mr" class="mr_in" @click="mark('bc_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="bc_bl" class="bl_in" @click="mark('bc_bl')"></td>
+                                            <td id="bc_bc" class="bc_in" @click="mark('bc_bc')"></td>
+                                            <td id="bc_br" class="br_in" @click="mark('bc_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td id='br_out'>
+                                <div id="br_div">
+                                    <table id="inner">
+                                        <tr>
+                                            <td id="br_tl" class="tl_in" @click="mark('br_tl')"></td>
+                                            <td id="br_tc" class="tc_in" @click="mark('br_tc')"></td>
+                                            <td id="br_tr" class="tr_in" @click="mark('br_tr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="br_ml" class="ml_in" @click="mark('br_ml')"></td>
+                                            <td id="br_mc" class="mc_in" @click="mark('br_mc')"></td>
+                                            <td id="br_mr" class="mr_in" @click="mark('br_mr')"></td>
+                                        </tr>
+                                        <tr>
+                                            <td id="br_bl" class="bl_in" @click="mark('br_bl')"></td>
+                                            <td id="br_bc" class="bc_in" @click="mark('br_bc')"></td>
+                                            <td id="br_br" class="br_in" @click="mark('br_br')"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div v-else>
+                    <div v-if="toggle">
+                        <h2>Choose your color</h2>
+                        <h2 v-if="playerX">{{ playerX }}</h2>
+                        <h2 v-else>Player X</h2>
+                    </div>
+                    <div v-else>
+                        <h2>Choose your color</h2>
+                        <h2 v-if="playerO">{{ playerO }}</h2>
+                        <h2 v-else>Player O</h2>
+                    </div>
+                    <ul id="colors">
+                        <li id="blue" @click="assignColor('blue')"></li>
+                        <li id="green" @click="assignColor('green')"></li>
+                        <li id="orange" @click="assignColor('orange')"></li>
+                        <li id="yellow" @click="assignColor('yellow')"></li>
+                        <li id="red" @click="assignColor('red')"></li>
+                        <li id="purple" @click="assignColor('purple')"></li>
+                        <li id="pink" @click="assignColor('pink')"></li>
+                    </ul>
+                </div>
+                <div id="collapsed">
+                    <div id="messagesCollapsed">
+                        <h2 id="error">{{ error }}</h2>
+                        <div id="alert" v-if="alertMsg">
+                        <h2 id="alert">{{ alertMsg }}</h2>
+                        <button @click="confirm()">{{ btnConfirm }}</button>
+                        <button @click="reject()">{{ btnReject }}</button>
+                    </div>
+                        <h2 id="win" v-bind:class="toggle ? colorX : colorO" v-if="winner != null">{{ winner }} wins!!</h2>
+                        <button v-if="winner != null" @click="change('again')">Play Again?</button>
+                    </div>
+                    <div id="nameFormsCollapsed" v-if="displayNameForms">
+                        <form @submit.prevent="toggleNameForms()">
+                            <input type="text" placeholder="Player X" v-model="playerX" />
+                            <input type="text" placeholder="Player O" v-model="playerO" />
+                            <button type="submit">Done</button>
+                        </form>
+                    </div>
+                    <div id="rulesCollapsed" v-if="displayRules">
+                        <h2>Definitions:</h2>
+                        <ul>
+                            <li>Local Boards (LB) = small 3x3 boards</li>
+                            <li>Global Board (GB) = large 3x3 grid</li>
+                            <li>Focus Ring = colored ring indicates next turn</li>
+                        </ul>
+                        <h2>Goal:</h2>
+                        <ul>
+                            <li>Win Global Board</li>
+                        </ul>
+                        <h2>Rules:</h2>
+                        <ul>
+                            <li>X plays first anywhere</li>
+                            <li>Every move in LB sends opponent to LB in respective GB grid</li>
+                            <li>Opponent must play inside of focus ring</li>
+                            <li>Focus ring color indicates player turn</li>
+                            <li>Win LB to mark on GB</li>
+                            <li>Win GB to win the game</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tooSmall">
+            <h1>**Screen too small**</h1>
+        </div>
+        <div id="footer">
+            <a href="http://hkevana.com">Return to homepage</a>
+        </div>
+    </body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.2/dist/vue.js"></script>
+    <script src="./script.js"></script>
+</html>
